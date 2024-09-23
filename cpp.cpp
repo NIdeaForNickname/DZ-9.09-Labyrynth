@@ -19,17 +19,18 @@ using namespace std;
 	enum KeyCodes { ENTER = 13, ESCAPE = 27, LEFT = 75, RIGHT = 77, UP = 72, DOWN = 80, SPACEBAR = 32 };
 #endif
 
-enum Objects { HALL, WALL, COIN, ENEMY };
+enum Objects { HALL, WALL, COIN, ENEMY, FIRST_AID };
 
 // использую ANSI Escape Sequences
 // enum не работает со стрингом, использую define как альтернативу
 #define RESET "\033[0m" // установить стандартный цвет
-#define DARKGREEN "\033[38;5;28m"
+#define DARKGREEN "\033[38;5;22m"
 #define RED "\033[38;5;160m"
 #define YELLOW "\033[38;5;226m"
 #define BLUE "\033[38;5;33m"
-#define BLACK "\033[38;2;255;255;255m"
+#define BLACK "\033[38;2;1;1;1m"
 #define GREY "\033[38;5;8m"
+#define GREEN "\033[38;5;40m"
 	
 
 
@@ -89,7 +90,7 @@ int main()
 		for (int x = 0; x < WIDTH; x++) // перебор столбцов
 		{
 			// по дефолту пишется случайное число
-			location[y][x] = rand() % 4; // 0 1 2 3
+			location[y][x] = rand() % 5; // 0 1 2 3 4
  
 			// стены по краям
 			if (x == 0 || y == 0 || x == WIDTH - 1 || y == HEIGHT - 1)
@@ -99,7 +100,7 @@ int main()
 			if (x == 0 && y == 2 || x == WIDTH - 1 && y == HEIGHT - 3)
 				location[y][x] = HALL;
  
-			if (location[y][x] == ENEMY) {
+			if (location[y][x] == ENEMY || location[y][x] == FIRST_AID) {
 				// определяется вероятность того, останется враг или нет
 				// допустим, вероястность остаться на уровне - 10%
 				int prob = rand() % 10; // 0-9
@@ -134,6 +135,10 @@ int main()
 				//SetConsoleTextAttribute(h, RED);
 				cout << RED;
 				cout << 'X';
+				break;
+			case FIRST_AID:
+				cout << GREEN;
+				cout << '+';
 				break;
 			default:
 				cout << location[y][x];
@@ -229,6 +234,54 @@ int main()
 			}
 		} else if (location[position[0]][position[1]] == ENEMY){
 			health--;
+			location[position[0]][position[1]] = HALL;
+			cout << "\033["<< HEIGHT + 1 << ";" << WIDTH - 3 << "H";
+			switch (health){
+			case 6:
+				cout << RED;
+				cout << "OOO";
+				break;
+			case 5:
+				cout << RED;
+				cout << "OOo";
+				break;
+			case 4:
+				cout << RED;
+				cout << "OO";
+				cout << GREY;
+				cout << "o";
+				break;
+			case 3:
+				cout << RED;
+				cout << "Oo";
+				cout << GREY;
+				cout << "o";
+				break;
+			case 2:
+				cout << RED;
+				cout << "O";
+				cout << GREY;
+				cout << "oo";
+				break;
+			case 1:
+				cout << RED;
+				cout << "o";
+				cout << GREY;
+				cout << "oo";
+				break;
+			case 0:
+				cout << GREY;
+				cout << "ooo";
+				showMessageBox("You Lost!");
+				return 0;
+				break;
+			default:
+				break;
+			}
+		} else if (location[position[0]][position[1]] == FIRST_AID){
+			if (health <= 5){
+				health++;
+			}
 			location[position[0]][position[1]] = HALL;
 			cout << "\033["<< HEIGHT + 1 << ";" << WIDTH - 3 << "H";
 			switch (health){
