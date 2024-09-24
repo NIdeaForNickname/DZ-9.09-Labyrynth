@@ -5,7 +5,7 @@ using namespace std;
 #ifdef __linux__ // linux moment
 	#include <stdlib.h>
 	#define ENTER_CHAR "\r\n"
-	void showMessageBox(string message) {
+	void showMessageBox(string message = " ") {
         string command = "zenity --info --text=\"" + message + "\"";
         system(command.c_str());
     }
@@ -31,8 +31,12 @@ enum Objects { HALL, WALL, COIN, ENEMY, FIRST_AID };
 #define BLACK "\033[38;2;1;1;1m"
 #define GREY "\033[38;5;8m"
 #define GREEN "\033[38;5;40m"
-	
 
+void myExit();
+void updateHearts(int &health, bool enemy = true, int height = 15, int width = 40);
+void showElement(string str = "", string color = " ", int y = 0, int x = 0);
+int Tile(int height = 15, int width = 40, int x = 0, int y = 0);
+void updateTile(int x = 0, int y = 2, int type = HALL);
 
 // const int ENTER = 13;
 // const int ESCAPE = 27;
@@ -41,7 +45,7 @@ int main()
 {
 	// linux moment
 #ifdef __linux__
-	system ("/bin/stty raw");
+	system("/bin/stty raw");
 #endif
 	int health = 6;
 	int code;
@@ -49,31 +53,14 @@ int main()
 	cout << "\033[1;40m";
 	// установить курсор в исходное положение (не знаю как в Визуал студио но у меня начинало со 2 строки)
 	cout << "\033[1;1H";
-
 	int cCoins,coins = 0;
 
 	// запуск алгоритма генерации случайных чисел
 	srand(time(0));
 	rand();
- 
-	// таблица аски для поиска символов псевдографики
-	//for (int code = 0; code < 256; code++)
-	//{
-	//	cout << code << " - " << (char)code << "\n";
-	//}
- 
-	// дескриптор окна консоли (порядковый номер окна в системе)
-	// HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
 
 	// скрыть стандартный мигающий курсор
-	// Windows:
-	// CONSOLE_CURSOR_INFO info;
-	// info.bVisible = false;
-	// info.dwSize = 100;
-	// SetConsoleCursorInfo(h, &info);
-	// cross-platform
 	cout << "\033[?25l";
- 
 	const int WIDTH = 50;
 	const int HEIGHT = 15;
 	int location[HEIGHT][WIDTH] = {};
@@ -83,109 +70,37 @@ int main()
 	// 1 - стена разрушаемая
 	// 2 - монетки
 	// 3 - враги
+	// 4 - аптечка
  
-	// генерация локации
+	// генерация и показ локации
 	for (int y = 0; y < HEIGHT; y++) // перебор строк
 	{
 		for (int x = 0; x < WIDTH; x++) // перебор столбцов
 		{
-			// по дефолту пишется случайное число
-			location[y][x] = rand() % 5; // 0 1 2 3 4
- 
-			// стены по краям
-			if (x == 0 || y == 0 || x == WIDTH - 1 || y == HEIGHT - 1)
-				location[y][x] = WALL;
- 
-			// вход и выход
-			if (x == 0 && y == 2 || x == WIDTH - 1 && y == HEIGHT - 3)
-				location[y][x] = HALL;
- 
-			if (location[y][x] == ENEMY || location[y][x] == FIRST_AID) {
-				// определяется вероятность того, останется враг или нет
-				// допустим, вероястность остаться на уровне - 10%
-				int prob = rand() % 10; // 0-9
-				if (prob != 0) // 1 2 3 4 5 6 7 8 9
-					location[y][x] = HALL;
-			}
+			location[y][x] = Tile(HEIGHT, WIDTH, x, y);
+			updateTile(x, y, location[y][x]);
+			if (location[y][x] == COIN){cCoins++;}
 		}
 	}
- 
-	// показ локации
-	for (int y = 0; y < HEIGHT; y++) // перебор строк
-	{
-		for (int x = 0; x < WIDTH; x++)
-		{
-			// cout << location[y][x];
-			switch (location[y][x]) {
-			case HALL: // коридор
-				cout << " ";
-				break;
-			case WALL: // стена
-				//SetConsoleTextAttribute(h, DARKGREEN); // 0-255
-				cout << DARKGREEN;
-				cout << '#'; //(char)219;
-				break;
-			case COIN: // монетки
-				//SetConsoleTextAttribute(h, YELLOW);
-				cout << YELLOW;
-				cout << '@'; // 249
-				cCoins++;
-				break;
-			case ENEMY: // враги
-				//SetConsoleTextAttribute(h, RED);
-				cout << RED;
-				cout << 'X';
-				break;
-			case FIRST_AID:
-				cout << GREEN;
-				cout << '+';
-				break;
-			default:
-				cout << location[y][x];
-				break;
-			}
-		}
-		cout << ENTER_CHAR;
-	}
-
+	cout << ENTER_CHAR;
 	// строка для ввода(getchar оставляет букву после себя, поэтому добавлю чёрную строку где всё будет написано чёрным текстом)
 	for (int x = 0; x < WIDTH; x++){
 		cout << " ";
 	}
 
 	// размещение ГГ (главного героя)
-	// COORD position;
-	// position.X = 1;
-	// position.Y = 2;
 	int position[2] = {2, 0}; // y,x
 
 	// функция установки курсора в любую точку на экране консоли
-	// SetConsoleCursorPosition(h, position);
-	// SetConsoleTextAttribute(h, BLUE);
-	cout << "\033[" << position[0] + 1 << ";" << position[1] + 1 << "H";
-	cout << BLUE;
-	cout << 'O';
-	
-	cout << "\033["<< HEIGHT + 1 << ";1H";
-	cout << YELLOW;
-	cout << "Coins: 0";
-
-	
-	cout << "\033["<< HEIGHT + 1 << ";" << WIDTH - 10 <<"H";
-	cout << RED;
-	cout << "Health:OOO";
+	showElement("O", BLUE, position[0], position[1]);
+	showElement("Coins: 0", YELLOW, HEIGHT, 0);
+	showElement("Health: OOO", RED, HEIGHT, WIDTH-12);
 	// игровой движок (интерактив с пользователем)
 	while (true) {
-		cout << "\033["<< HEIGHT + 1 << ";21H";
-		cout << BLACK;
+		showElement(" ", BLACK, HEIGHT, 20);
 		code = getchar();
 		// стирание ГГ в старой позиции
-		// SetConsoleCursorPosition(h, position);
-		// SetConsoleTextAttribute(h, BLUE);c
-
-		cout << "\033[" << position[0] + 1 << ";" << position[1] + 1 << "H";
-		cout << BLUE;
-		cout << " ";
+		updateTile(position[1], position[0], location[position[0]][position[1]]);
  
 		// пользователь может нажать любую кнопку (в том числе энтер, эскейп, пробел, стрелочки), после чего вернётся код нажатой клавиши
 		switch (code) {
@@ -222,110 +137,21 @@ int main()
 		// взаимодействие ГГ с другими объектами в лабиринте
 		if (location[position[0]][position[1]] == COIN) {
 			coins++;
-			// cout << "COIN COLLECTED!\n";
 			location[position[0]][position[1]] = HALL;
-			cout << "\033[" << position[0] + 1 << ";" << position[1] + 1 << "H";
-			cout << " ";
-			cout << "\033["<< HEIGHT + 1 << ";8H";
-			cout << YELLOW;
-			cout << coins;
+			showElement(to_string(coins), YELLOW, HEIGHT, 8);
+
 			if (coins >= cCoins){
 				showMessageBox("You Won!");
 			}
+
 		} else if (location[position[0]][position[1]] == ENEMY){
-			health--;
 			location[position[0]][position[1]] = HALL;
-			cout << "\033["<< HEIGHT + 1 << ";" << WIDTH - 3 << "H";
-			switch (health){
-			case 6:
-				cout << RED;
-				cout << "OOO";
-				break;
-			case 5:
-				cout << RED;
-				cout << "OOo";
-				break;
-			case 4:
-				cout << RED;
-				cout << "OO";
-				cout << GREY;
-				cout << "o";
-				break;
-			case 3:
-				cout << RED;
-				cout << "Oo";
-				cout << GREY;
-				cout << "o";
-				break;
-			case 2:
-				cout << RED;
-				cout << "O";
-				cout << GREY;
-				cout << "oo";
-				break;
-			case 1:
-				cout << RED;
-				cout << "o";
-				cout << GREY;
-				cout << "oo";
-				break;
-			case 0:
-				cout << GREY;
-				cout << "ooo";
-				showMessageBox("You Lost!");
-				return 0;
-				break;
-			default:
-				break;
-			}
+			updateHearts(health, true, HEIGHT, WIDTH);
+
 		} else if (location[position[0]][position[1]] == FIRST_AID){
-			if (health <= 5){
-				health++;
-			}
-			location[position[0]][position[1]] = HALL;
-			cout << "\033["<< HEIGHT + 1 << ";" << WIDTH - 3 << "H";
-			switch (health){
-			case 6:
-				cout << RED;
-				cout << "OOO";
-				break;
-			case 5:
-				cout << RED;
-				cout << "OOo";
-				break;
-			case 4:
-				cout << RED;
-				cout << "OO";
-				cout << GREY;
-				cout << "o";
-				break;
-			case 3:
-				cout << RED;
-				cout << "Oo";
-				cout << GREY;
-				cout << "o";
-				break;
-			case 2:
-				cout << RED;
-				cout << "O";
-				cout << GREY;
-				cout << "oo";
-				break;
-			case 1:
-				cout << RED;
-				cout << "o";
-				cout << GREY;
-				cout << "oo";
-				break;
-			case 0:
-				cout << GREY;
-				cout << "ooo";
-				showMessageBox("You Lost!");
-				return 0;
-				break;
-			default:
-				break;
-			}
+
+			if (health <= 5){location[position[0]][position[1]] = HALL;}
+			updateHearts(health, false, HEIGHT, WIDTH);
 		}
 
 		// показ ГГ в новой позиции
@@ -341,4 +167,104 @@ int main()
 	system ("/bin/stty cooked");
 #endif
 	return 0;
+}
+
+void showElement(string str, string color, int y, int x){
+	cout << "\033[" << y+1 << ";" << x+1 << "H";
+	if (color != " ") {cout << color;}
+	cout << str;
+}
+
+int Tile(int height, int width, int x, int y){
+	int location, temp;
+	int probab[][3] = {
+		{HALL, 1, 1},
+		{WALL, 1, 1},
+		{COIN, 2, 1},
+		{ENEMY, 8, 1},
+		{FIRST_AID, 10, 1}
+	};
+	location = rand() % 5;
+	temp = rand() % probab[location][1];
+	if (temp >= probab[location][2]){location = HALL;}
+	if (!x || !y || x == width-1 || y == height-1){
+		location = WALL;
+		if (x == 0 && y == 2 || x == width - 1 && y == height - 3)
+			location = HALL;
+	}
+	return location;
+}
+
+void updateTile(int x, int y, int type){
+	switch (type) {
+		case HALL: // коридор
+			showElement(" ", BLACK, y, x);
+			break;
+		case WALL: // стена
+			//SetConsoleTextAttribute(h, DARKGREEN); // 0-255
+			showElement("#", DARKGREEN, y, x);
+			break;
+		case COIN: // монетки
+			//SetConsoleTextAttribute(h, YELLOW);
+			showElement("@", YELLOW, y, x);
+			break;
+		case ENEMY: // враги
+			//SetConsoleTextAttribute(h, RED);
+			showElement("X", RED, y, x);
+			break;
+		case FIRST_AID:
+			showElement("+", GREEN, y, x);
+			break;
+		default:
+			break;
+	}
+}
+
+void updateHearts(int &health, bool enemy, int height, int width){
+	if (!enemy){
+		if (health < 6){
+			health++;
+		}
+	} else{
+		health--;
+	}
+	switch (health){
+		case 6:
+			showElement("OOO", RED, height, width - 4);
+			break;
+		case 5:
+			showElement("OOo", RED, height, width - 4);
+			break;
+		case 4:
+			showElement("OO", RED, height, width - 4);
+			showElement("o", GREY, height, width - 2);
+			break;
+		case 3:
+			showElement("Oo", RED, height, width - 4);
+			showElement("o", GREY, height, width - 2);
+			break;
+		case 2:
+			showElement("O", RED, height, width - 4);
+			showElement("oo", GREY, height, width - 3);
+			break;
+		case 1:
+			showElement("o", RED, height, width - 4);
+			showElement("oo", GREY, height, width - 3);
+			break;
+		case 0:
+			showElement("ooo", GREY, height, width - 4);
+			showMessageBox("You Lost!");
+			myExit();
+			break;
+		default:
+			break;
+	}
+}
+
+void myExit(){
+	cout << ENTER_CHAR;
+#ifdef __linux__
+	system ("/bin/stty cooked");
+#endif
+	exit(0);
 }
